@@ -1,8 +1,6 @@
-# Наследуемый класс для инфракрасного изображения
-# наследуемый от класса image
-
 from image import image
 import numpy as np
+import cv2 as cv
 
 class infraImage(image):
     def __init__(self, filePath: str, temperatureMin, temperatureMax, cmap=None, tempMap= None) -> None:
@@ -15,10 +13,9 @@ class infraImage(image):
 
     def getTempMax(self):
         return self.tempMax
-    # Паблик методы, которые будут испльзоваться для решения различных задач
-    # Методы для выделения горячих/холодных областей
+    
     def getAreaCold(self):
-        img = self._image.copy
+        img = self._image.copy()
         matrixSum = self._createSumBGR()
         mean = self._findMean(matrixSum)
         meanArea = self._findMean(matrixSum, mean, '<')
@@ -29,7 +26,7 @@ class infraImage(image):
         return img
 
     def getAreaHot(self):
-        img = self._image.copy
+        img = self._image.copy()
         matrixSum = self._createSumBGR()
         mean = self._findMean(matrixSum)
         meanArea = self._findMean(matrixSum, mean, '>')
@@ -40,16 +37,17 @@ class infraImage(image):
         return img
 
     def getAreaAvg(self):
-        img = self._image.copy
+        img = self._image.copy()
         matrixSum = self._createSumBGR()
         mean = self._findMean(matrixSum)
+        meanAreaHot = self._findMean(matrixSum, mean, '>')
+        meanAreaCold = self._findMean(matrixSum, mean, '<')
         for i in range(len(matrixSum)):
             for j in range(len(matrixSum[i])):
-                if (matrixSum[i][j] < mean) or (matrixSum[i][j] > mean):
+                if (matrixSum[i][j] > meanAreaHot) or (matrixSum[i][j] < meanAreaCold):
                     img[i][j] = [0, 0, 0]
         return img
 
-    # Блок методов для получения цветовой карты
     def getTempMap(self):
         return self._createTempMap(self.tempMin, self.tempMax)
 
@@ -57,27 +55,38 @@ class infraImage(image):
         tempMap = self._createTempMap(self.tempMin, self.tempMax)
         return self._createColorMap(tempMap, tMin, tMax)
 
-    # Метод наложения маски
-    def overlayMask(self):
-        pass
-
     def _rgbToTemperature(self, rg, tMin, tMax):
-        if isinstance(rg, tuple) or isinstance(rg, list):
-            temp = tMin + (rg[-1] + rg[-2])/510 * (tMax - tMin)
-        else:
-            temp = tMin + (rg / 510) * (tMax - tMin)
+        temp = tMin + (rg / 510) * (tMax - tMin)
         return temp
+    
+    def drawHotPoint(self):
+        imageDot = self._image.copy()
+        tempMap = self._createTempMap(self.tempMin, self.tempMax)
+        hotPoint = np.unravel_index(tempMap.argmax(), tempMap.shape)
+        image = cv.circle(imageDot, hotPoint, 1, (255, 0, 0), 4)
+        return image
 
+    def drawColdPoint(self):
+        imageDot = self._image.copy()
+        tempMap = self._createTempMap(self.tempMin, self.tempMax)
+        hotPoint = np.unravel_index(tempMap.argmin(), tempMap.shape)
+        image = cv.circle(imageDot, hotPoint, 1, (255, 0, 0), 4)
+        return image
+    
     def _tempToBGR(self, temperature, tmin, tmax):
         r = 0
         g = 0
         gr = 510*(temperature - tmin)/(tmax-tmin)
         if gr > 255:
             r = 255
-            r = gr - 255
+            g = gr - 255
+            if g > 255:
+                g = 255
+            else:
+                g = int(g)
         elif gr >= 0:
             g = 0
-            r = gr
+            r = int(gr)
         else:
             return g, r
         return g, r
@@ -86,20 +95,18 @@ class infraImage(image):
         tempMatrix = np.zeros((self._width, self._height))
         for i in range(self._width):
             for j in range(self._height):
-                sumBGR = infraImage[i][j].sum()
+                sumBGR = self._image[i][j].sum()
                 tempMatrix[i][j] = self._rgbToTemperature(sumBGR, tMin, tMax)
         return tempMatrix
 
     def _createColorMap(self, tempMatrix, tMin, tMax):
-        image = np.zeros((self._width, self._height, 3), dtype=np.uint16)
+        image = self._image.copy()
         for i in range(self._width):
             for j in range(self._height):
-                G, R = self.tempToBGR(tempMatrix[i][j], tMin, tMax)
-                BGR = np.array([0, G, R])
-                image[i][j] = BGR
+                G, R = self._tempToBGR(tempMatrix[i][j], tMin, tMax)
+                image[i][j] = [0, G, R]
         return image
 
-    # Блок методов для расчета зон
     def _createSumBGR(self):
         sumBGR = np.zeros((self._width, self._height), dtype=np.uint16)
         for i in range(self._width):
@@ -109,6 +116,7 @@ class infraImage(image):
 
     def _findMean(self, matrixSum, matrixMean=None, oper=None):
         summa = 0
+        lenght = 0
         if matrixMean is None:
             for i in range(len(matrixSum)):
                 for j in range(len(matrixSum[i])):

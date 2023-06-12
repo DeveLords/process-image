@@ -2,45 +2,31 @@ from PySide6.QtWidgets import (QWidget,
                                QLabel,
                                QHBoxLayout,
                                QVBoxLayout,
-                               QTableWidget,
                                QPushButton,
                                QGroupBox,
                                QSizePolicy,
                                QRadioButton,
                                QCheckBox,
-                               QDoubleSpinBox,
-                               QTableWidgetItem)
-from PySide6.QtCore import Qt
+                               QDoubleSpinBox)
+from PySide6 import QtWidgets, QtCore
+
+from processImageModel import processImageModel
 
 class centralWidget(QWidget):
-    def __init__(self, ivImage : dict, fileName : str):
+    def __init__(self):
         super().__init__()
-        self.ivImage = ivImage
-        self.fileName = fileName
-        self.listKeys = list(self.ivImage)
-        self.ind = self.listKeys.index(self.fileName)
-        self.setWindowTitle('Подробно')
         self._createСentralWidget()
 
     def _createСentralWidget(self):
+        
+        self.processImageModel = processImageModel()
         # Левая секция окна
         self.imageView = QLabel()
-        self.tableInfAboutImage = QTableWidget(self)
-        image = self.ivImage[self.fileName][0].convertCV2toQt()
-        self.imageView.setPixmap(image)
-        self.imageView.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.tableInfAboutImage = QtWidgets.QTableView()
+        self.tableInfAboutImage.setModel(self.processImageModel)
+    
+        self.imageView.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         self.tableInfAboutImage.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.tableInfAboutImage.setColumnCount(3)
-        self.tableInfAboutImage.setRowCount(2)
-        self.tableInfAboutImage.setItem(0, 0, QTableWidgetItem('Имя файла'))
-        self.tableInfAboutImage.setItem(0, 1, QTableWidgetItem('Минимум'))
-        self.tableInfAboutImage.setItem(0, 2, QTableWidgetItem('Максимум'))
-        self.fillTable()
-
-        self.previousButton = QPushButton(text='<-- Предудующее', parent=self)
-        self.nextButton = QPushButton(text='Следующее -->', parent=self)
-        self.previousButton.clicked.connect(self.clikedPreviousBtn)
-        self.nextButton.clicked.connect(self.clikedNextBtn)
 
         # Правая секция окна
         self.displayGroupBox = QGroupBox('Отображение', self)
@@ -60,34 +46,64 @@ class centralWidget(QWidget):
         self.infraredDisplaying = QRadioButton('Инфракрасное', self.displayGroupBox)
         self.infraredDisplaying.setCheckable(True)
         self.infraredDisplaying.setChecked(True)
+        self.infraredDisplaying.setStatusTip('Режим отображения: инфракрасное изображение')
+        
         self.visibleDisplaying = QRadioButton('Видимое', self.displayGroupBox)
         self.visibleDisplaying.setCheckable(True)
-        self.infraredDisplaying.clicked.connect(self.turnVisInfra)
-        self.visibleDisplaying.clicked.connect(self.turnInfraVis)
+        self.visibleDisplaying.setStatusTip('Режим отображения: изображение в видимом диапазоне')
+        
+        self.infraredDisplaying.clicked.connect(self.turnDisplay)
+        self.visibleDisplaying.clicked.connect(self.turnDisplay)
 
         # rangeGroupBox
         self.minRangeLabel = QLabel('Минимум', self)
         self.maxRangeLabel = QLabel('Максимум', self)
         self.rangeMin = QDoubleSpinBox(self)
-        self.rangeMin.setValue(self.ivImage[self.fileName][0].getTempMin())
         self.rangeMax = QDoubleSpinBox(self)
-        self.rangeMax.setValue(self.ivImage[self.fileName][0].getTempMax())
+        
         self.applyButton = QPushButton('Принять',self)
         self.resetButton = QPushButton('Сбросить',self)
-
+        self.applyButton.setStatusTip('Применить новый диапазон отображаемых температур')
+        self.resetButton.setStatusTip('Сбросить диапазон отображаемых температур')
+        
+        self.applyButton.pressed.connect(self.changeRangeTemp)
+        self.resetButton.pressed.connect(self.resetRangeTemp)
         # dotGroupBox
-        self.hotDot = QCheckBox('Горячая', self)
-        self.coldDot = QCheckBox('Холодная', self)
-        self.avgDot = QCheckBox('Средняя', self)
+        self.hotDot = QRadioButton('Горячая', self)
+        self.coldDot = QRadioButton('Холодная', self)
+        self.avgDot = QRadioButton('Средняя', self)
+        
+        self.hotDot.setCheckable(True)
+        self.coldDot.setCheckable(True)
+        self.avgDot.setCheckable(True)
+        
+        self.hotDot.clicked.connect(self.dotTypeDisplay)
+        self.coldDot.clicked.connect(self.dotTypeDisplay)
+        self.avgDot.clicked.connect(self.dotTypeDisplay)
+        
 
         #areaGroupBox
         self.originalArea = QRadioButton('Оригинал', self)
         self.coldArea = QRadioButton('Холодные', self)
         self.hotArea = QRadioButton('Горячие', self)
         self.avgArea = QRadioButton('Средних', self)
+        
+        self.originalArea.setStatusTip('Показать изначальное изображение')
+        self.coldArea.setStatusTip('Показать холодные области')
+        self.hotArea.setStatusTip('Показать горячие области')
+        self.avgArea.setStatusTip('Пока области средних температур')
+        
+        
+        self.originalArea.clicked.connect(self.infraTypeDisplay)
+        self.coldArea.clicked.connect(self.infraTypeDisplay)
+        self.hotArea.clicked.connect(self.infraTypeDisplay)
+        self.avgArea.clicked.connect(self.infraTypeDisplay)
 
         self.originalArea.setCheckable(True)
         self.originalArea.setChecked(True)
+        self.coldArea.setCheckable(True)
+        self.hotArea.setCheckable(True)
+        self.avgArea.setCheckable(True)
 
 
         #Добавлене виджетов
@@ -127,8 +143,8 @@ class centralWidget(QWidget):
         mainRightVLayout = QVBoxLayout()
 
         # Настройка левой секции
-        mainLeftBHLayout.addWidget(self.previousButton)
-        mainLeftBHLayout.addWidget(self.nextButton)
+        # mainLeftBHLayout.addWidget(self.previousButton)
+        # mainLeftBHLayout.addWidget(self.nextButton)
         mainLeftVLayout.addWidget(self.imageView)
         mainLeftVLayout.addWidget(self.tableInfAboutImage)
         mainLeftVLayout.addLayout(mainLeftBHLayout)
@@ -144,59 +160,70 @@ class centralWidget(QWidget):
 
         self.setLayout(mainHLayout)
 
-    def turnInfraVis(self):
-        image = self.ivImage[self.fileName][1].convertCV2toQt()
+    def turnDisplay(self):
+        print(self.infraredDisplaying.isChecked())
+        image = self.processImageModel.showSelectedImage(self.currentIndex, self.infraredDisplaying.isChecked())
+        
         self.imageView.setPixmap(image)
-        self.rangeGroupBox.setEnabled(False)
-        self.dotGroupBox.setEnabled(False)
-        self.areaGroupBox.setEnabled(False)
-
-    def turnVisInfra(self):
-        image = self.ivImage[self.fileName][0].convertCV2toQt()
+        self.processImageModel.layoutChanged.emit()
+        self.rangeMin.setValue(self.processImageModel.imageInf[0][1])
+        self.rangeMax.setValue(self.processImageModel.imageInf[0][2])
+        
+    def changeRangeTemp(self):
+        tempMin = self.rangeMin.value()
+        tempMax = self.rangeMax.value()
+        image = self.processImageModel.ProcessImage(self.currentIndex, 5, tempMin, tempMax)
         self.imageView.setPixmap(image)
-        self.rangeGroupBox.setEnabled(True)
-        self.dotGroupBox.setEnabled(True)
-        self.areaGroupBox.setEnabled(True)
-
-    def setNewPixmap(self):
-        if self.infraredDisplaying.isChecked() is True:
-            image = self.ivImage[self.fileName][0].convertCV2toQt()
-            self.imageView.setPixmap(image)
-            self.imageView.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-            self.rangeMin.setValue(self.ivImage[self.fileName][0].getTempMin())
-            self.rangeMax.setValue(self.ivImage[self.fileName][0].getTempMax())
-        else:
-            image = self.ivImage[self.fileName][1].convertCV2toQt()
-            self.imageView.setPixmap(image)
-            self.imageView.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-            self.rangeMin.setValue(self.ivImage[self.fileName][0].getTempMin())
-            self.rangeMax.setValue(self.ivImage[self.fileName][0].getTempMax())
-
-    def clikedPreviousBtn(self):
-        self.ind -= 1
-        if self.ind >= 0:
-            self.fileName = self.listKeys[self.ind]
-            self.setNewPixmap()
-            self.fillTable()
-        else:
-            self.ind = (len(self.listKeys) - 1)
-            self.fileName = self.listKeys[self.ind]
-            self.setNewPixmap()
-            self.fillTable()
-
-    def clikedNextBtn(self):
-        self.ind += 1
-        if self.ind != len(self.listKeys):
-            self.fileName = self.listKeys[self.ind]
-            self.setNewPixmap()
-            self.fillTable()
-        else:
-            self.ind = 0
-            self.fileName = self.listKeys[self.ind]
-            self.setNewPixmap()
-            self.fillTable()
-
-    def fillTable(self):
-        self.tableInfAboutImage.setItem(1, 0, QTableWidgetItem(self.fileName))
-        self.tableInfAboutImage.setItem(1, 1, QTableWidgetItem(str(self.ivImage[self.fileName][0].getTempMin())))
-        self.tableInfAboutImage.setItem(1, 2, QTableWidgetItem(str(self.ivImage[self.fileName][0].getTempMax())))
+        self.rangeMin.setMaximum(self.rangeMax.value())
+        self.rangeMax.setMaximum(self.rangeMax.value() + 200)
+    
+    def resetRangeTemp(self):
+        image = self.processImageModel.showSelectedImage(self.currentIndex, self.infraredDisplaying.isChecked())
+        self.imageView.setPixmap(image)
+        self.rangeMin.setValue(self.processImageModel.imageInf[0][1])
+        self.rangeMax.setValue(self.processImageModel.imageInf[0][2])
+        self.rangeMin.setMaximum(self.rangeMax.value())
+        self.rangeMax.setMaximum(self.rangeMax.value() + 200)
+    
+    def infraTypeDisplay(self):
+        if self.originalArea.isChecked() is True:
+            typeDisplay = 1
+        if self.hotArea.isChecked() is True:
+            typeDisplay = 2
+        if self.coldArea.isChecked() is True:
+            typeDisplay = 3
+        if self.avgArea.isChecked() is True:
+            typeDisplay = 4      
+        image = self.processImageModel.ProcessImage(self.currentIndex, typeDisplay)
+        self.imageView.setPixmap(image)
+    
+    def dotTypeDisplay(self):
+        if self.hotDot.isChecked() is True:
+            typeDisplay = 6
+        if self.coldDot.isChecked() is True:
+            typeDisplay = 7
+        if self.avgDot.isChecked() is True:
+            typeDisplay = 8
+        image = self.processImageModel.ProcessImage(self.currentIndex, typeDisplay)
+        self.imageView.setPixmap(image)
+        
+    
+    def setImageContainerModel(self, imageContainer):
+        self.processImageModel.setImageContainer(imageContainer)
+        
+    def showSelectedImage(self, index):
+        self.currentIndex = index
+        image = self.processImageModel.showSelectedImage(self.currentIndex, self.infraredDisplaying.isChecked())
+        self.imageView.setPixmap(image)
+        self.processImageModel.layoutChanged.emit()
+        self.rangeMin.setValue(self.processImageModel.imageInf[0][1])
+        self.rangeMax.setValue(self.processImageModel.imageInf[0][2])
+        self.rangeMin.setMaximum(self.rangeMax.value())
+        self.rangeMin.setMaximum(self.processImageModel.imageInf[0][1] + 200)
+        
+    def clearArea(self):
+        self.imageView.clear()
+        self.rangeMin.clear()
+        self.rangeMax.clear()
+        self.processImageModel.clearData()
+        self.processImageModel.layoutChanged.emit()
