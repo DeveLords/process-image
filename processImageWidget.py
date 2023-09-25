@@ -12,7 +12,7 @@ from PySide6 import QtWidgets, QtCore
 
 from processImageModel import processImageModel
 
-class centralWidget(QWidget):
+class processImageWidget(QWidget):
     def __init__(self):
         super().__init__()
         self._createСentralWidget()
@@ -71,17 +71,13 @@ class centralWidget(QWidget):
         # dotGroupBox
         self.hotDot = QRadioButton('Горячая', self)
         self.coldDot = QRadioButton('Холодная', self)
-        self.avgDot = QRadioButton('Средняя', self)
         
         self.hotDot.setCheckable(True)
         self.coldDot.setCheckable(True)
-        self.avgDot.setCheckable(True)
         
         self.hotDot.clicked.connect(self.dotTypeDisplay)
         self.coldDot.clicked.connect(self.dotTypeDisplay)
-        self.avgDot.clicked.connect(self.dotTypeDisplay)
-        
-
+    
         #areaGroupBox
         self.originalArea = QRadioButton('Оригинал', self)
         self.coldArea = QRadioButton('Холодные', self)
@@ -93,7 +89,6 @@ class centralWidget(QWidget):
         self.hotArea.setStatusTip('Показать горячие области')
         self.avgArea.setStatusTip('Пока области средних температур')
         
-        
         self.originalArea.clicked.connect(self.infraTypeDisplay)
         self.coldArea.clicked.connect(self.infraTypeDisplay)
         self.hotArea.clicked.connect(self.infraTypeDisplay)
@@ -104,7 +99,6 @@ class centralWidget(QWidget):
         self.coldArea.setCheckable(True)
         self.hotArea.setCheckable(True)
         self.avgArea.setCheckable(True)
-
 
         #Добавлене виджетов
         diplayGroupBoxLayout.addWidget(self.infraredDisplaying)
@@ -120,7 +114,6 @@ class centralWidget(QWidget):
 
         dotGroupBoxLayout.addWidget(self.hotDot)
         dotGroupBoxLayout.addWidget(self.coldDot)
-        dotGroupBoxLayout.addWidget(self.avgDot)
 
         areaGroupBoxLayout.addWidget(self.originalArea)
         areaGroupBoxLayout.addWidget(self.hotArea)
@@ -143,8 +136,6 @@ class centralWidget(QWidget):
         mainRightVLayout = QVBoxLayout()
 
         # Настройка левой секции
-        # mainLeftBHLayout.addWidget(self.previousButton)
-        # mainLeftBHLayout.addWidget(self.nextButton)
         mainLeftVLayout.addWidget(self.imageView)
         mainLeftVLayout.addWidget(self.tableInfAboutImage)
         mainLeftVLayout.addLayout(mainLeftBHLayout)
@@ -161,13 +152,20 @@ class centralWidget(QWidget):
         self.setLayout(mainHLayout)
 
     def turnDisplay(self):
-        print(self.infraredDisplaying.isChecked())
         image = self.processImageModel.showSelectedImage(self.currentIndex, self.infraredDisplaying.isChecked())
         
         self.imageView.setPixmap(image)
         self.processImageModel.layoutChanged.emit()
         self.rangeMin.setValue(self.processImageModel.imageInf[0][1])
         self.rangeMax.setValue(self.processImageModel.imageInf[0][2])
+        if self.visibleDisplaying.isChecked() == True:
+            self.rangeGroupBox.setEnabled(False)
+            self.dotGroupBox.setEnabled(False)
+            self.areaGroupBox.setEnabled(False)
+        else:
+            self.rangeGroupBox.setEnabled(True)
+            self.dotGroupBox.setEnabled(True)
+            self.areaGroupBox.setEnabled(True)
         
     def changeRangeTemp(self):
         tempMin = self.rangeMin.value()
@@ -202,8 +200,6 @@ class centralWidget(QWidget):
             typeDisplay = 6
         if self.coldDot.isChecked() is True:
             typeDisplay = 7
-        if self.avgDot.isChecked() is True:
-            typeDisplay = 8
         image = self.processImageModel.ProcessImage(self.currentIndex, typeDisplay)
         self.imageView.setPixmap(image)
         

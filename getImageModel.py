@@ -26,9 +26,7 @@ class getImageModel(QtCore.QAbstractListModel):
     
     def getAllocatedImage(self, indexesImage: list):
         fileList, dirPath = self.controller.getFileImage(indexesImage)
-        print(fileList)
         self.imageContainer = imageContainer(fileList, dirPath)
-        print(self.imageContainer.getListImages())
         
     def loadAllocatedImage(self):
         pass

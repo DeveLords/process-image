@@ -1,5 +1,5 @@
 import csv
-from os import listdir, stat
+from os import listdir
 from os.path import isfile, join
 
 class controller:
@@ -11,7 +11,6 @@ class controller:
         self.availalbeFiles = [(file, (join(self.dirPath, file))) 
                                for file in listdir(self.dirPath) if 
                                isfile(join(self.dirPath, file))]
-        print(self.availalbeFiles)
         return self.availalbeFiles
     
     def saveImages(self):

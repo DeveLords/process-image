@@ -1,12 +1,9 @@
 from infraImage import infraImage
 from visibleImage import visibleImage
 
-
 class imageContainer:
     def __init__(self, filesList = None, dirPath = None):
         self.imageList = []
-        print(self.imageList)
-        print(dirPath)
         for i, values in enumerate(filesList):
             self.imageList.append((infraImage(dirPath + '\\infra\\' + values[0], 
                                             values[1], values[2]),

@@ -62,16 +62,18 @@ class infraImage(image):
     def drawHotPoint(self):
         imageDot = self._image.copy()
         tempMap = self._createTempMap(self.tempMin, self.tempMax)
-        hotPoint = np.unravel_index(tempMap.argmax(), tempMap.shape)
-        image = cv.circle(imageDot, hotPoint, 1, (255, 0, 0), 4)
-        return image
+        hotPoint = np.unravel_index(tempMap.argmax(axis=None), tempMap.shape)
+        imageWithDot = cv.circle(imageDot, (hotPoint[1], hotPoint[0]), 1, (255, 0, 0), 4)
+        imageDot = cv.putText(imageDot, str(round(tempMap[hotPoint], 2)), (hotPoint[1] + 5, hotPoint[0] - 5), cv.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1, cv.LINE_AA)
+        return imageWithDot
 
     def drawColdPoint(self):
         imageDot = self._image.copy()
         tempMap = self._createTempMap(self.tempMin, self.tempMax)
-        hotPoint = np.unravel_index(tempMap.argmin(), tempMap.shape)
-        image = cv.circle(imageDot, hotPoint, 1, (255, 0, 0), 4)
-        return image
+        coldPoint = np.unravel_index(tempMap.argmin(), tempMap.shape)
+        imageWithDot = cv.circle(imageDot, (coldPoint[1], coldPoint[0]), 1, (255, 0, 0), 4)
+        imageDot = cv.putText(imageDot, str(round(tempMap[coldPoint], 2)), (coldPoint[1] + 5, coldPoint[0] - 5), cv.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1, cv.LINE_AA)
+        return imageDot
     
     def _tempToBGR(self, temperature, tmin, tmax):
         r = 0

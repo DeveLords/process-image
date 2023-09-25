@@ -1,7 +1,6 @@
 import cv2
 from PySide6.QtGui import QPixmap, QImage
 
-
 class image:
     def __init__(self, filePath: str):
         self._image = cv2.imread(filePath)

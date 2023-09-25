@@ -23,7 +23,3 @@ class modelListImage(QtCore.QAbstractListModel):
     def clearData(self):
         self.imageContainer = None
         self.listImage = []
-    
-    
-
-        

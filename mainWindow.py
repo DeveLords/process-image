@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QFileDialog,
                                QHBoxLayout,
                                QListView,
                                QSizePolicy)
-from centralWidget import centralWidget
+from processImageWidget import processImageWidget
 from PySide6.QtGui import QAction, QIcon, QPixmap
 from getImageWindow import getImageWindow
 from modelListImage import modelListImage
@@ -38,12 +38,9 @@ class mainWindow(QMainWindow):
         openAction = QAction(QIcon(self.icoDir + '32x32\\open.ico'), "Открыть", self)
         saveAction = QAction(QIcon(self.icoDir + '32x32\\save.ico'), "Сохранить", self)
         closeAction = QAction(QIcon(self.icoDir + '32x32\\exit.ico'), "Закрыть", self)
-        openAction.setToolTip('Открыть рабочую область')
-        saveAction.setToolTip('Сохранить рабочую область')
-        closeAction.setToolTip('Закрыть рабочую область')
-        openAction.setStatusTip('Открыть рабочую область')
-        saveAction.setStatusTip('Сохранить рабочую область')
-        closeAction.setStatusTip('Закрыть рабочую область')
+        openAction.setToolTip('Загрузить изображения')
+        saveAction.setToolTip('Сохранить изображения')
+        closeAction.setToolTip('Закрыть изображения')
 
         toolBar.addAction(openAction)
         toolBar.addAction(saveAction)
@@ -60,10 +57,14 @@ class mainWindow(QMainWindow):
         openAction = QAction(QIcon(self.icoDir + '16x16\\open.ico'),'Загрузить', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Загрузить набор изображений')
+        
+        saveAction = QAction(QIcon(self.icoDir + '16x16\\save.ico'),'Загрузить', self)
+        saveAction.setShortcut('Ctrl+S')
+        saveAction.setStatusTip('Сохранить набор изображений')
 
         closeAction = QAction(QIcon(self.icoDir + '16x16\\exit.ico'), 'Закрыть', self)
         closeAction.setShortcut('Ctrl+Q')
-        closeAction.setStatusTip('Закрыть без изображения')
+        closeAction.setStatusTip('Закрыть')
         closeAction.triggered.connect(self.closeWorkplace)
 
         exitAction = QAction(QIcon(self.icoDir + '16x16\\delete.ico'), 'Выход', self)
@@ -83,6 +84,7 @@ class mainWindow(QMainWindow):
         helpMenu = menuBar.addMenu('Справка')
 
         fileMenu.addAction(openAction)
+        fileMenu.addAction(saveAction)
         fileMenu.addAction(closeAction)
         fileMenu.addSeparator()
         fileMenu.addAction(exitAction)
@@ -97,7 +99,7 @@ class mainWindow(QMainWindow):
         self.modelListImage = modelListImage()
         self.listViewImages.setModel(self.modelListImage)
         
-        self.processImageView = centralWidget()
+        self.processImageView = processImageWidget()
         self.listViewImages.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
         centrWidget = QWidget()
         
@@ -119,20 +121,10 @@ class mainWindow(QMainWindow):
         self.listViewImages.selectionModel().currentChanged.connect(self.on_row_changed)
         
     def on_row_changed(self, current, previous):
-        print(current.row())
         self.processImageView.showSelectedImage(current.row())
         
-    
     def saveWorkArea(self):
         QFileDialog.getSaveFileName(self)
-
-    def openViewImage(self):
-        subWindow = self.centralArea.activeSubWindow()
-        title = subWindow.windowTitle()
-        self.aboutImage = centralWidget(self.ivImage, title)
-        self.aboutImage.setMinimumHeight(600)
-        self.aboutImage.setMinimumWidth(800)
-        self.aboutImage.show()
 
     def closeWorkplace(self):
         self.processImageView.clearArea()
